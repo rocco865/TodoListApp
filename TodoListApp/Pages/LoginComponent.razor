@@ -1,7 +1,6 @@
-﻿         @page "/login"
-        @inject NavigationManager NavigationManager
-        @inject ILocalStorageService localStorage
-        @inject NavigationManager NavigationManager
+﻿@page "/login"
+@inject ILocalStorageService localStorage
+@inject NavigationManager NavigationManager
 
 <div class="container d-flex justify-content-center align-items-center" style="min-height: 100vh;">
     <div class="card" style="width: 400px;">
@@ -25,22 +24,33 @@
                     <button type="submit" class="btn btn-primary">Login</button>
                 </div>
             </EditForm>
+            @if(ShowRegistrationLink)
+            {
+                <p>Non puoi accedere perchè non sei registrato clicca <a href="/">qui</a> per registrarti.</p>
+            }
         </div>
     </div>
 </div>
 
 @code {
-    [Parameter]
-    public EventCallback<string> OnLogin { get; set; }
-
     private string? email { get; set; }
     private string? password { get; set; }
+    private bool ShowRegistrationLink = false;
 
     private async Task HandleLogin()
     {
-        //Qui andrebbe la logica di autenticazione
-        await localStorage.SetItemAsync("email", email); // Memorizza l'email
-        NavigationManager.NavigateTo($"/todolist/{email}");
+        //Recupera l'email salvata da LocalStorage
+        string? storedEmail = await localStorage.GetItemAsync<string>("email");
+
+        if (storedEmail == email && !string.IsNullOrEmpty(storedEmail)) //Verifica se l'email inserita corrisponde a quella salvata
+        {
+            NavigationManager.NavigateTo($"/todolist/{email}"); //Naviga alla pagina di TodoList
+        }
+        else
+        {
+            ShowRegistrationLink = true; // L'email non corrisponde, mostra il link di registrazione
+            StateHasChanged(); // Forzo l'aggiornamento dell'interfaccia utente per mostrare il messaggio
+        }
     }
 }
        

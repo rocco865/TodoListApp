@@ -2,8 +2,13 @@
 @inject HttpClient Http
 @inject Blazored.LocalStorage.ILocalStorageService localStorage
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
 
 <div class="container">
+    <div class="d-flex justify-content-end align-items-center mb-3">
+        <button class="btn btn-primary" @onclick="Logout">Logout</button>
+    </div>
+    
     <h1>Todo List</h1>
 
     <div class="input-group mb-3">
@@ -113,13 +118,13 @@
 
     private async Task SaveTodo(TodoItem todo)
     {
-            try{
-        await Http.PutAsJsonAsync($"api/Todos/{todo.Id}?userId={UserId}", todo);
+        try
+        {
+            await Http.PutAsJsonAsync($"api/Todos/{todo.Id}?userId={UserId}", todo);
             todos = await Http.GetFromJsonAsync<List<TodoItem>>($"api/Todos?userId={UserId}") ?? new List<TodoItem>();
-        todoToEdit = null;
-        } catch(Exception ex){
-            //TODO: gestisci l'eccezione
+            todoToEdit = null;
         }
+        catch (Exception ex) {}
     }
 
     private void CancelEdit()
@@ -130,5 +135,11 @@
     private async Task EditTodo(TodoItem todo)
     {
         todoToEdit = todo;
+    }
+
+    private async Task Logout()
+    {
+        //await localStorage.RemoveItemAsync("email"); 
+        NavigationManager.NavigateTo("/login"); 
     }
 }

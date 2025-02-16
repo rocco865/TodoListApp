@@ -21,17 +21,12 @@ namespace ToDoListAppServer.Controllers
         {
             if (ModelState.IsValid)
             {
-                //Verifica che l'email non sia già usata
-                if (_context.Users.Any(u => u.Email == model.Email))
-                {
-                    return BadRequest("Email già in uso");
-                }
                 // Crea un nuovo utente
                 var user = new User
                 {
                     Username = model.Username,
                     Email = model.Email,
-                    PasswordHash = model.Password // ***MAI FARE IN PRODUZIONE!***
+                    PasswordHash = model.Password // ATTENZIONE: NON USARE IN PRODUZIONE!
                 };
 
                 // Aggiungi l'utente al database
@@ -39,7 +34,7 @@ namespace ToDoListAppServer.Controllers
                 await _context.SaveChangesAsync();
 
                 // Restituisci una risposta di successo
-                return Ok("User created successfully");
+                return Ok(new { Message = "Registration successful" });
             }
 
             // Se il modello non è valido, restituisci un errore
@@ -51,24 +46,29 @@ namespace ToDoListAppServer.Controllers
         {
             if (ModelState.IsValid)
             {
-                // Trova l'utente nel database
                 var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == model.Email);
 
-                if (user == null)
+                if (user != null)
                 {
-                    return BadRequest("Credenziali non valide");
-                }
+                    if (user.PasswordHash == model.PasswordHash)
+                    {
+                        // Autenticazione riuscita
+                        return Ok(new { Message = "Login successful", Email = user.Email });
+                    }
+                    else
+                    {
+                        return Unauthorized(new { Message = "Invalid credentials" });
+                    }
 
-                // Verifica la password (IN PRODUZIONE, USA L'HASHING!)
-                if (user.PasswordHash != model.Password)  // ***MAI FARE IN PRODUZIONE!***
+                }
+                else
                 {
-                    return BadRequest("Credenziali non valide");
+                    //Email non trovata
+                    return Unauthorized(new { Message = "Invalid credentials" });
                 }
-
-                // Login effettuato con successo
-                return Ok("Login effettuato con successo");
             }
 
+            // Se il modello non è valido, restituisci un errore
             return BadRequest(ModelState);
         }
     }
