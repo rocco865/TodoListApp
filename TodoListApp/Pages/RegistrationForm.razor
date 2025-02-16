@@ -1,0 +1,65 @@
+﻿@* @page "/registration" *@
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 100vh;">
+    <div class="card" style="width: 400px;">
+        <div class="card-body">
+            <h5 class="card-title text-center">Registrazione</h5>
+
+            <EditForm Model="this" OnValidSubmit="HandleRegistration">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <div class="mb-3">
+                    <label for="username" class="form-label">Username</label>
+                    <InputText id="username" class="form-control" @bind-Value="Username" />
+                </div>
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <InputText id="email" class="form-control" @bind-Value="Email" />
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password</label>
+                    <InputText type="password" class="form-control" id="password" @bind-Value="Password" />
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary">Registrati</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public EventCallback OnRegistered { get; set; }
+
+    private string Username { get; set; } = "";
+    private string Email { get; set; } = "";
+    private string Password { get; set; } = "";
+
+    private async Task HandleRegistration()
+    {
+        // Crea un oggetto con i dati di registrazione
+        var registrationData = new { Username = Username, Email = Email, Password = Password };
+
+        // Invia una richiesta POST all'API
+        var response = await Http.PostAsJsonAsync("api/Registration/register", registrationData);
+
+        if (response.IsSuccessStatusCode)
+        {
+            // Registrazione riuscita
+            Console.WriteLine("Registration successful!");
+            await OnRegistered.InvokeAsync(); //Solleva l'evento OnRegistered
+            NavigationManager.NavigateTo("/login"); //Naviga alla pagina di login
+        }
+        else
+        {
+            // Registrazione fallita
+            Console.WriteLine($"Registration failed: {response.StatusCode}");
+            //Gestisci l'errore
+        }
+    }
+}

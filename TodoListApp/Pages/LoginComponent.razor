@@ -1,0 +1,46 @@
+﻿         @page "/login"
+        @inject NavigationManager NavigationManager
+        @inject ILocalStorageService localStorage
+        @inject NavigationManager NavigationManager
+
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 100vh;">
+    <div class="card" style="width: 400px;">
+        <div class="card-body">
+            <h5 class="card-title text-center">Login</h5>
+
+            <EditForm Model="this" OnValidSubmit="HandleLogin">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <InputText id="email" class="form-control" @bind-Value="email" />
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password</label>
+                    <InputText type="password" class="form-control" id="password" @bind-Value="password" />
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary">Login</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public EventCallback<string> OnLogin { get; set; }
+
+    private string? email { get; set; }
+    private string? password { get; set; }
+
+    private async Task HandleLogin()
+    {
+        //Qui andrebbe la logica di autenticazione
+        await localStorage.SetItemAsync("email", email); // Memorizza l'email
+        NavigationManager.NavigateTo($"/todolist/{email}");
+    }
+}
+       

@@ -1,0 +1,44 @@
+﻿@page "/"
+@inject NavigationManager NavigationManager;
+
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+@if (!IsRegistered)
+{
+    <RegistrationForm OnRegistered="HandleRegistered" />
+}
+else if (!IsLoggedIn)
+{
+    <LoginComponent OnLogin="HandleLogin" />
+}
+else
+{
+    <TodoList UserId="@currentUserId" />
+}
+
+@code {
+    private bool IsRegistered { get; set; } = false;
+    private bool IsLoggedIn { get; set; } = false;
+    private string? currentUserId { get; set; }
+
+    private async Task HandleRegistered()
+    {
+         IsRegistered = true;
+         NavigationManager.NavigateTo("/Login");
+         StateHasChanged();
+    }
+
+    private async Task HandleLogin(string email)
+    {
+        IsLoggedIn = true;
+         currentUserId = email; // L'email funziona come UserId per ora
+         await localStorage.SetItemAsync("email", currentUserId);
+        NavigationManager.NavigateTo($"/todolist/{email}");
+        StateHasChanged();
+    }
+
+    public void goToComponent(string component)
+    {
+        NavigationManager.NavigateTo(component);
+    }
+}

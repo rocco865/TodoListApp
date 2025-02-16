@@ -1,0 +1,134 @@
+﻿@page "/todolist/{UserId}"
+@inject HttpClient Http
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@inject NavigationManager NavigationManager
+
+<div class="container">
+    <h1>Todo List</h1>
+
+    <div class="input-group mb-3">
+        <input type="text" class="form-control" placeholder="Aggiungi un nuovo todo..." aria-label="Nuovo todo" aria-describedby="button-addon2" @bind="newTodoTitle" />
+        <button class="btn btn-primary" type="button" id="button-addon2" @onclick="AddTodo">
+            <i class="fas fa-plus-circle"></i> Aggiungi
+        </button>
+    </div>
+
+    <div class="row">
+        @foreach (var todo in todos)
+        {
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            @if (todoToEdit == todo)
+                            {
+                                <InputText class="form-control" @bind-Value="todo.Title" />
+                            }
+                            else
+                            {
+                                @todo.Title
+                            }
+                        </h5>
+                        <p class="card-text">
+                            @if (todoToEdit == todo)
+                            {
+                                <InputTextArea class="form-control" @bind-Value="todo.Description" />
+                            }
+                            else
+                            {
+                                @todo.Description
+                            }
+                        </p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" @onchange="(e => UpdateTodo(e, todo))" />
+                                <label class="form-check-label">Completato</label>
+                            </div>
+                            <div>
+                                @if (todoToEdit == todo)
+                                {
+                                    <button class="btn btn-sm btn-success" @onclick="(() => SaveTodo(todo))">Salva</button>
+                                    <button class="btn btn-sm btn-secondary" @onclick="CancelEdit">Annulla</button>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-sm btn-outline-primary" @onclick="() => EditTodo(todo)"><i class="fas fa-pencil-square"></i></button>
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteTodo(todo)"><i class="fas fa-trash"></i></button>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<TodoItem> todos = new List<TodoItem>();
+    private string? newTodoTitle;
+
+    [Parameter]
+    public string? UserId { get; set; }
+    private TodoItem? todoToEdit;
+    private string? newTodoDescription;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var storedEmail = await localStorage.GetItemAsync<string>("email");
+
+        if (string.IsNullOrEmpty(storedEmail))
+        {
+            NavigationManager.NavigateTo("/");
+        }
+        else
+        {
+            UserId = storedEmail;
+            todos = await Http.GetFromJsonAsync<List<TodoItem>>($"api/Todos?userId={UserId}") ?? new List<TodoItem>();
+        }
+    }
+
+    private async Task AddTodo()
+    {
+        if (!string.IsNullOrEmpty(newTodoTitle))
+        {
+            TodoItem newTodo = new() { Title = newTodoTitle, UserId = UserId, Description = newTodoDescription };
+            await Http.PostAsJsonAsync($"api/Todos?userId={UserId}", newTodo);
+            todos = await Http.GetFromJsonAsync<List<TodoItem>>($"api/Todos?userId={UserId}") ?? new List<TodoItem>();
+            newTodoTitle = string.Empty;
+        }
+    }
+
+    private async Task UpdateTodo(ChangeEventArgs e, TodoItem todo)
+    {
+        todo.IsCompleted = (bool)e.Value;
+        await Http.PutAsJsonAsync($"api/Todos/{todo.Id}", todo);
+    }
+
+    private async Task DeleteTodo(TodoItem todo)
+    {
+        await Http.DeleteAsync($"api/Todos/{todo.Id}?userId={UserId}");
+        todos = await Http.GetFromJsonAsync<List<TodoItem>>($"api/Todos?userId={UserId}") ?? new List<TodoItem>();
+    }
+
+    private async Task SaveTodo(TodoItem todo)
+    {
+            try{
+        await Http.PutAsJsonAsync($"api/Todos/{todo.Id}?userId={UserId}", todo);
+            todos = await Http.GetFromJsonAsync<List<TodoItem>>($"api/Todos?userId={UserId}") ?? new List<TodoItem>();
+        todoToEdit = null;
+        } catch(Exception ex){
+            //TODO: gestisci l'eccezione
+        }
+    }
+
+    private void CancelEdit()
+    {
+        todoToEdit = null;
+    }
+
+    private async Task EditTodo(TodoItem todo)
+    {
+        todoToEdit = todo;
+    }
+}
